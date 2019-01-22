@@ -3,7 +3,8 @@ from django.http import HttpResponse
 
 # Define different views to send a reponse to
 def index(request):
-    return HttpResponse("Rango says hey there partner!")
+    context_dict = {'boldmessage': "Crunchy, creamy, cookie, candy, cupcake!"}
+    return render(request, 'rango/index.html', context=context_dict)
 
 def about(request):
     return HttpResponse("Rango says here is the about page.")

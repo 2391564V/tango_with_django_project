@@ -6,4 +6,4 @@ def index(request):
     return HttpResponse("Rango says hey there partner!")
 
 def about(request):
-    return HttpResponse("This is the about page!")
+    return HttpResponse("Rango says here is the about page.")

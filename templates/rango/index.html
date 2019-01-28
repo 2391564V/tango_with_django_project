@@ -9,15 +9,25 @@
     <h1>Rango says...</h1>
     <div>hey there partner!</div>
 
-    <!-- List top 5 categories onto page -->
     <div>
       {% if categories %}
+        <!-- List top 5 categories -->
+        <h2>Most Liked Categories:</h2>
         <ul>
           {% for category in categories %}
           <li><a href="/rango/category/{{ category.slug }}">
             {{ category.name }}</a></li>
           {% endfor %}
         </ul>
+
+        <!-- List top 5 pages -->
+        <h2>Most Viewed Pages:</h2>
+          <ol>
+            {% for page in pages %}
+              <li><a href="{{ page.url }}">
+              {{ page.title }}</a> : {{ page.views }} views</li>
+            {% endfor %}
+          </ol>
       {% else %}
         <strong>There are no categories present.</strong>
       {% endif %}

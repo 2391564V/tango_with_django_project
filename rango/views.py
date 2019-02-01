@@ -3,7 +3,7 @@ from django.http import HttpResponse
 
 # import models
 from rango.models import Category, Page
-from rango.forms import CategoryForm
+from rango.forms import CategoryForm, PageForm
 
 # Define different views to send a reponse to
 def index(request):
@@ -31,6 +31,7 @@ def show_category(request, category_name_slug):
         pages = Page.objects.filter(category=category)
         context_dict['pages'] = pages
         context_dict['category'] = category
+
     except Category.DoesNotExist:
         context_dict['pages'] = None
         context_dict['category'] = None
@@ -52,3 +53,27 @@ def add_category(request):
             print(form.errors)
 
     return render(request, 'rango/add_category.html', {'form': form})
+
+def add_page(request, category_name_slug):
+    category = Category.objects.get(slug=category_name_slug)
+    form = PageForm()
+
+    # A http post?
+    if request.method == 'POST':
+        print("Post recieved.")
+        form = PageForm(request.POST)
+
+        # Check validity
+        if form.is_valid():
+            print("Valid form.")
+            page = form.save(commit=False) # Save to database
+            page.category = category
+            page.views = 0
+            page.save()
+            return show_category(request, category_name_slug)
+        else:
+            print(form.errors)
+
+    pages = Page.objects.filter(category=category)
+    context_dict = {'form':form, 'category':category, 'pages':pages}
+    return render(request, 'rango/add_page.html', context_dict)

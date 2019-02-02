@@ -1,31 +1,31 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Rango</title>
-  </head>
-  <body>
-    <h1>{{ category.name }}</h1>
-    <h2>Current Pages:</h2>
-    <ul>
-      {% for page in pages %}
-        <li>{{ page.title }}</li>
-      {% endfor %}
-    </ul>
+{% extends 'rango/base.html' %}
 
-    <h2>Add a Page</h2>
-    <div>
-      <form id="page_form" method="post" action="/rango/category/{{ category.slug }}/add_page/">
-        {% csrf_token %}
-        {% for hidden in form.hidden_fields %}
-          {{ hidden }}
-        {% endfor %}
-        {% for field in form.visible_fields %}
-          {{ field.errors }}
-          {{ field.help_text }}
-          {{ field }}<br />
-        {% endfor %}
-        <input type="submit" name="submit" value="Create Page" />
-      </form>
-    </div>
-  </body>
-</html>
+{% block title_block %}
+  Add a Page
+{% endblock %}
+
+{% block body_block %}
+  <h1>{{ category.name }}</h1>
+  <h2>Current Pages:</h2>
+  <ul>
+    {% for page in pages %}
+      <li>{{ page.title }}</li>
+    {% endfor %}
+  </ul>
+
+  <h2>Add a Page</h2>
+  <div>
+    <form id="page_form" method="post" action="{% url 'rango:add_page' category.slug %}">
+      {% csrf_token %}
+      {% for hidden in form.hidden_fields %}
+        {{ hidden }}
+      {% endfor %}
+      {% for field in form.visible_fields %}
+        {{ field.errors }}
+        {{ field.help_text }}
+        {{ field }}<br />
+      {% endfor %}
+      <input type="submit" name="submit" value="Create Page" />
+    </form>
+  </div>
+{% endblock %}

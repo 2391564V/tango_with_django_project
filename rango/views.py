@@ -3,7 +3,7 @@ from django.http import HttpResponse
 
 # import models
 from rango.models import Category, Page
-from rango.forms import CategoryForm, PageForm
+from rango.forms import CategoryForm, PageForm, UserForm, UserProfileForm
 
 # Define different views to send a reponse to
 def index(request):
@@ -77,3 +77,41 @@ def add_page(request, category_name_slug):
     pages = Page.objects.filter(category=category)
     context_dict = {'form':form, 'category':category, 'pages':pages}
     return render(request, 'rango/add_page.html', context_dict)
+
+# User registration
+def register(request):
+    registered = False
+
+    # If request is a http POST, process form
+    if request.method == 'POST':
+        user_form = UserForm(data=request.POST)
+        profile_form = UserProfileForm(data=request.POST)
+
+        # Check if forms are valid
+        if user_form.is_valid() and profile_form.is_valid():
+            user = user_form.save()
+
+            # Hash user password, save.
+            user.set_password(user.password)
+            user.save()
+            profile = profile_form.save(commit=False)
+            profile.user = user
+
+            # Profile picture?
+            if 'picture' in request.FILES:
+                profile.picture = request.FILES['picture']
+
+            # Save
+            profile.save()
+            registered = True
+        else:
+            # Invalid forms, print problems to terminal
+            print(user_form.errors, profile_form.errors)
+    else:
+        # Not a http POST, so render registration form
+        user_form = UserForm()
+        profile_form = UserProfileForm()
+
+    # Render
+    context_dict = {'user_form': user_form, 'profile_form': profile_form, 'registered': registered}
+    return render(request, 'rango/register.html', context_dict)

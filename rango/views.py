@@ -1,6 +1,8 @@
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
 
 # import models
@@ -141,10 +143,29 @@ def user_login(request):
                 # An inactive account was used
                 return HttpResponse("Your account is disabled.")
         else:
+            userExists = User.objects.filter(username=username).exists()
+            if userExists:
+                # Username exists, password is wrong.
+                print("Password is incorrect.")
+                return HttpResponse("Password is incorrect.")
+            else:
+                # Username doesn't exist.
+                print("Username doesn't exist.")
+                return HttpResponse("Username doesn't exist.")
+
             # Bad login details provided
-            print("Invalid login details: {0}, {1}".format(username, password))
-            return HttpResponse("Invalid login details supplied.")
+            #print("Invalid login details: {0}, {1}".format(username, password))
+            #return HttpResponse("Invalid login details supplied.")
 
     # If not a http post, display log in form.
     else:
         return render(request, 'rango/user_login.html', {})
+
+@login_required
+def restricted(request):
+    return render(request, 'rango/restricted.html', {})
+
+@login_required
+def user_logout(request):
+    logout(request)
+    return HttpResponseRedirect(reverse('index'))

@@ -1,9 +1,8 @@
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.models import User
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate, login
 from django.core.urlresolvers import reverse
+from datetime import datetime
 
 # import models
 from rango.models import Category, Page
@@ -11,16 +10,57 @@ from rango.forms import CategoryForm, PageForm, UserForm, UserProfileForm
 
 # Define different views to send a reponse to
 def index(request):
-    # Retrieve top 5 Categories and '-' means descending order
-    category_list = Category.objects.order_by('-likes')[:5]
-    # Retrieve top 5 viewed pages
-    page_list = Page.objects.order_by("-views")[:5]
+    request.session.set_test_cookie()
 
+    # Retrieve top 5 Categories and Pages, '-' means descending order.
+    category_list = Category.objects.order_by('-likes')[:5]
+    page_list = Page.objects.order_by("-views")[:5]
     context_dict = {'categories': category_list, 'pages': page_list}
-    return render(request, 'rango/index.html', context=context_dict)
+
+    # Create cookies
+    visitor_cookie_handler(request)
+    context_dict['visits'] = request.session['visits']
+
+    # Return response to user
+    return render(request, 'rango/index.html', context_dict)
+
+def visitor_cookie_handler(request):
+    # Get number of visitors to the site
+    # If cookie exists, use 'visits' value otherwise default to 1
+    visits = int(get_server_side_cookie(request, 'visits', 1))
+
+    # Get time from last visit
+    last_visit_cookie = get_server_side_cookie(
+        request, 'last_visit', str(datetime.now()))
+    last_visit_time = datetime.strptime(last_visit_cookie[:-7],
+                        '%Y-%m-%d %H:%M:%S')
+
+    # If its been more than a day
+    if(datetime.now() - last_visit_time).seconds > 0:
+        visits = visits + 1
+        # Update the last visit cookie to now
+        request.session['last_visit'] = str(datetime.now())
+    else:
+        request.session['last_visit'] = last_visit_cookie
+
+    # Update the visits cookie
+    request.session['visits'] = visits
+
+# Helper function to check if requested cookie is in session data,
+# If not, returns default value
+def get_server_side_cookie(request, cookie, default_val=None):
+    val = request.session.get(cookie)
+    if not val:
+        val = default_val
+    return val
 
 def about(request):
-    context_dict = {'boldmessage': "Crunchy, creamy, cookie, candy, cupcake!"}
+    if request.session.test_cookie_worked():
+        print("Test cookie worked.")
+        request.session.delete_test_cookie()
+
+    context_dict = {'boldmessage': "Crunchy, creamy, cookie, candy, cupcake!",
+        'visits': request.session['visits']}
     return render(request, 'rango/about.html', context=context_dict)
 
 def show_category(request, category_name_slug):
@@ -143,29 +183,10 @@ def user_login(request):
                 # An inactive account was used
                 return HttpResponse("Your account is disabled.")
         else:
-            userExists = User.objects.filter(username=username).exists()
-            if userExists:
-                # Username exists, password is wrong.
-                print("Password is incorrect.")
-                return HttpResponse("Password is incorrect.")
-            else:
-                # Username doesn't exist.
-                print("Username doesn't exist.")
-                return HttpResponse("Username doesn't exist.")
-
             # Bad login details provided
-            #print("Invalid login details: {0}, {1}".format(username, password))
-            #return HttpResponse("Invalid login details supplied.")
+            print("Invalid login details: {0}, {1}".format(username, password))
+            return HttpResponse("Invalid login details supplied.")
 
     # If not a http post, display log in form.
     else:
         return render(request, 'rango/user_login.html', {})
-
-@login_required
-def restricted(request):
-    return render(request, 'rango/restricted.html', {})
-
-@login_required
-def user_logout(request):
-    logout(request)
-    return HttpResponseRedirect(reverse('index'))
